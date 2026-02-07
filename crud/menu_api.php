@@ -3,10 +3,25 @@
  * Server-side DataTables API for Menu (รายการอาหาร)
  * Supports search, pagination, sorting via AJAX
  */
-require_once 'session.php';
+ob_start();
+
+// Start session and load DB without the default session.php redirect behavior
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once dirname(__DIR__) . '/_db/connect.php';
 
+// Clear any stray output from includes (BOM, whitespace, PHP warnings)
+ob_end_clean();
+
 header('Content-Type: application/json; charset=utf-8');
+
+// Check session - return JSON error instead of HTML redirect
+if (empty($_SESSION['ses_username'])) {
+    http_response_code(401);
+    echo json_encode(['draw' => 1, 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Session expired'], JSON_UNESCAPED_UNICODE);
+    exit();
+}
 
 // DataTables parameters
 $draw = intval($_GET['draw'] ?? 1);
@@ -87,7 +102,17 @@ try {
         'recordsTotal' => 0,
         'recordsFiltered' => 0,
         'data' => [],
-        'error' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
+        'error' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ' . $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+    error_log("Menu API error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'draw' => $draw ?? 1,
+        'recordsTotal' => 0,
+        'recordsFiltered' => 0,
+        'data' => [],
+        'error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
 ?>
