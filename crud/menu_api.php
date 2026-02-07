@@ -3,6 +3,10 @@
  * Server-side DataTables API for Menu (รายการอาหาร)
  * Supports search, pagination, sorting via AJAX
  */
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 ob_start();
 
 // Start session and load DB without the default session.php redirect behavior
@@ -21,6 +25,20 @@ if (empty($_SESSION['ses_username'])) {
     http_response_code(401);
     echo json_encode(['draw' => 1, 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Session expired'], JSON_UNESCAPED_UNICODE);
     exit();
+}
+
+// Ensure DB connection uses UTF-8
+$pdo->exec("SET NAMES utf8mb4");
+
+// Helper: ensure string is valid UTF-8 for json_encode
+function toUtf8($val) {
+    if (is_null($val)) return '';
+    $val = (string)$val;
+    if (mb_check_encoding($val, 'UTF-8')) return $val;
+    // Try converting from TIS-620 (Thai) or Latin1
+    $converted = @mb_convert_encoding($val, 'UTF-8', 'TIS-620');
+    if ($converted !== false) return $converted;
+    return mb_convert_encoding($val, 'UTF-8', 'ISO-8859-1');
 }
 
 // DataTables parameters
@@ -73,15 +91,17 @@ try {
 
     $data = [];
     while ($row = $dataStmt->fetch()) {
+        $menuName = toUtf8($row['menu_name']);
+        $typeName = toUtf8($row['menu_type_name']);
         $data[] = [
             'DT_RowId' => 'row_' . $row['menu_id'],
             'menu_id' => htmlspecialchars($row['menu_id'] ?? '', ENT_QUOTES, 'UTF-8'),
-            'menu_name' => htmlspecialchars($row['menu_name'] ?? '', ENT_QUOTES, 'UTF-8'),
-            'menu_type_name' => '<span class="badge bg-info">' . htmlspecialchars($row['menu_type_name'] ?? '', ENT_QUOTES, 'UTF-8') . '</span>',
+            'menu_name' => htmlspecialchars($menuName, ENT_QUOTES, 'UTF-8'),
+            'menu_type_name' => '<span class="badge bg-info">' . htmlspecialchars($typeName, ENT_QUOTES, 'UTF-8') . '</span>',
             'actions' => '',
             'raw' => [
                 'menu_id' => (int)$row['menu_id'],
-                'menu_name' => $row['menu_name'],
+                'menu_name' => $menuName,
                 'menu_type_id' => (int)$row['menu_type_id'],
             ]
         ];

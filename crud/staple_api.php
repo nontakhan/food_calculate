@@ -23,6 +23,19 @@ if (empty($_SESSION['ses_username'])) {
     exit();
 }
 
+// Ensure DB connection uses UTF-8
+$pdo->exec("SET NAMES utf8mb4");
+
+// Helper: ensure string is valid UTF-8 for json_encode
+function toUtf8($val) {
+    if (is_null($val)) return '';
+    $val = (string)$val;
+    if (mb_check_encoding($val, 'UTF-8')) return $val;
+    $converted = @mb_convert_encoding($val, 'UTF-8', 'TIS-620');
+    if ($converted !== false) return $converted;
+    return mb_convert_encoding($val, 'UTF-8', 'ISO-8859-1');
+}
+
 // DataTables parameters
 $draw = intval($_GET['draw'] ?? 1);
 $start = intval($_GET['start'] ?? 0);
@@ -81,6 +94,10 @@ try {
     $data = [];
     $rowNum = $start + 1;
     while ($row = $dataStmt->fetch()) {
+        $stapleName = toUtf8($row['staple_name']);
+        $menuName = toUtf8($row['menu_name']);
+        $typeName = toUtf8($row['staple_type_name']);
+
         $isFishBadge = $row['is_fish'] == 1 
             ? '<span class="badge bg-primary">ใช่</span>' 
             : '<span class="badge bg-secondary">ไม่ใช่</span>';
@@ -88,17 +105,16 @@ try {
         $data[] = [
             'DT_RowId' => 'row_' . $row['staple_id'],
             'num' => $rowNum,
-            'staple_name' => htmlspecialchars($row['staple_name'] ?? '', ENT_QUOTES, 'UTF-8'),
+            'staple_name' => htmlspecialchars($stapleName, ENT_QUOTES, 'UTF-8'),
             'staple_serve' => htmlspecialchars($row['staple_serve'] ?? '', ENT_QUOTES, 'UTF-8'),
-            'menu_name' => '<span class="badge bg-info">' . htmlspecialchars($row['menu_name'] ?? '', ENT_QUOTES, 'UTF-8') . '</span>',
+            'menu_name' => '<span class="badge bg-info">' . htmlspecialchars($menuName, ENT_QUOTES, 'UTF-8') . '</span>',
             'staple_yield' => htmlspecialchars($row['staple_yield'] ?? '', ENT_QUOTES, 'UTF-8'),
-            'staple_type_name' => htmlspecialchars($row['staple_type_name'] ?? '', ENT_QUOTES, 'UTF-8'),
+            'staple_type_name' => htmlspecialchars($typeName, ENT_QUOTES, 'UTF-8'),
             'is_fish' => $isFishBadge,
-            'actions' => '', // Will be built client-side
-            // Raw data for edit modal
+            'actions' => '',
             'raw' => [
                 'staple_id' => (int)$row['staple_id'],
-                'staple_name' => $row['staple_name'],
+                'staple_name' => $stapleName,
                 'staple_serve' => $row['staple_serve'],
                 'menu_id' => (int)$row['menu_id'],
                 'staple_type_id' => (int)$row['staple_type_id'],
