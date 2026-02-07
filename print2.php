@@ -302,6 +302,39 @@ $total_menu = implode(',', array_map('intval', array_filter(explode(',', $total_
             background: #cbd5e1;
         }
         
+        /* Mobile Responsive */
+        @media screen and (max-width: 768px) {
+            body { padding: 5px; }
+            
+            .print-page { border-radius: 8px; }
+            
+            .report-header { padding: 15px; }
+            .header-content { flex-direction: column; text-align: center; gap: 10px; }
+            .header-text h1 { font-size: 17px; }
+            .header-text .hospital-name { font-size: 13px; }
+            .header-text .report-type { font-size: 12px; }
+            .logo-container { width: 60px; height: 60px; }
+            .logo-container img { width: 45px; height: 45px; }
+            
+            .info-section { padding: 12px 15px; }
+            .info-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .info-icon { width: 32px; height: 32px; font-size: 12px; }
+            .info-label { font-size: 10px; }
+            .info-value { font-size: 13px; }
+            
+            .table-section { padding: 15px 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .section-title { font-size: 14px; }
+            
+            .data-table { min-width: 600px; font-size: 11px; }
+            .data-table thead th { padding: 8px 5px; font-size: 11px; }
+            .data-table tbody td { padding: 6px 5px; }
+            
+            .print-actions { top: 10px; right: 10px; }
+            .btn-action { padding: 8px 12px; font-size: 12px; }
+            
+            .report-footer { padding: 15px; }
+        }
+        
         @media print {
             body {
                 background: #fff;

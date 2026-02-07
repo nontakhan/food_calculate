@@ -24,6 +24,11 @@ include("head.php");
   max-width: 90%;
   margin: auto;
 }
+@media screen and (max-width: 768px) {
+  .content { max-width: 100%; padding: 5px; }
+  .panel-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .panel-body table { min-width: 500px; }
+}
 </style>
 <body onunload="opener.location.reload()" class="content">
 <br>
