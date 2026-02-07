@@ -1,0 +1,13 @@
+# Environment variables (contains credentials)
+.env
+
+# Database dumps (should not be in version control)
+*.sql
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

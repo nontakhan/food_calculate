@@ -2,11 +2,17 @@
 include "session.php";
 include '_db/connect.php';
 
-$values1 = $_GET["values1"] ?? '';
-$values2 = $_GET["values2"] ?? '';
-$total_menu = $_GET['total_menu'] ?? '';
-$amount1 = $_GET['amount1'] ?? 0;
-$amount2 = $_GET['amount2'] ?? 0;
+// Sanitize GET parameters to prevent SQL Injection
+$values1_raw = $_GET["values1"] ?? '';
+$values2_raw = $_GET["values2"] ?? '';
+$total_menu_raw = $_GET['total_menu'] ?? '';
+$amount1 = intval($_GET['amount1'] ?? 0);
+$amount2 = intval($_GET['amount2'] ?? 0);
+
+// Ensure all IDs are integers only
+$values1 = implode(',', array_map('intval', array_filter(explode(',', $values1_raw), 'strlen')));
+$values2 = implode(',', array_map('intval', array_filter(explode(',', $values2_raw), 'strlen')));
+$total_menu = implode(',', array_map('intval', array_filter(explode(',', $total_menu_raw), 'strlen')));
 ?>
 <!DOCTYPE html>
 <html lang="th">
