@@ -2,11 +2,17 @@
 include "session.php";
 include '_db/connect.php';
 
-$values1 = $_GET["values1"];
-$values2 = $_GET["values2"];
-$total_menu = $_GET['total_menu'];
-$amount1 = $_GET['amount1'];
-$amount2 = $_GET['amount2'];
+// Sanitize GET parameters to prevent SQL Injection
+$values1_raw = $_GET["values1"] ?? '';
+$values2_raw = $_GET["values2"] ?? '';
+$total_menu_raw = $_GET['total_menu'] ?? '';
+$amount1 = intval($_GET['amount1'] ?? 0);
+$amount2 = intval($_GET['amount2'] ?? 0);
+
+// Ensure all IDs are integers only
+$values1 = implode(',', array_map('intval', array_filter(explode(',', $values1_raw), 'strlen')));
+$values2 = implode(',', array_map('intval', array_filter(explode(',', $values2_raw), 'strlen')));
+$total_menu = implode(',', array_map('intval', array_filter(explode(',', $total_menu_raw), 'strlen')));
 
 include("head.php");
 
@@ -17,6 +23,11 @@ include("head.php");
 .content {
   max-width: 90%;
   margin: auto;
+}
+@media screen and (max-width: 768px) {
+  .content { max-width: 100%; padding: 5px; }
+  .panel-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .panel-body table { min-width: 500px; }
 }
 </style>
 <body onunload="opener.location.reload()" class="content">
@@ -49,8 +60,8 @@ include("head.php");
           while ($row3 = mysqli_fetch_array($res3)) { ?>
               <tr>
                   <td></td>
-                  <td><?= $row3['type'] ?></td>
-                  <td><?= $row3['menu_name']; ?></td>
+                  <td><?= htmlspecialchars($row3['type']); ?></td>
+                  <td><?= htmlspecialchars($row3['menu_name']); ?></td>
                   
               </tr>
           <?php $y++; }

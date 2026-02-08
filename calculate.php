@@ -2,6 +2,7 @@
 include 'session.php';
 include '_db/connect.php';
 $menu = 'calculate';
+$csrf_token = generateCsrfToken();
 include 'header.php';
 ?>
 
@@ -18,6 +19,7 @@ include 'header.php';
         </div>
         <div class="card-body">
             <form action="calculate.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
                 <div class="row g-3 mb-3">
                     <div class="col-lg-9">
                         <label class="form-label fw-bold"><i class="fas fa-bed me-1 text-primary"></i> รายการอาหาร (ห้องธรรมดา) <span class="text-danger">*</span></label>
@@ -26,7 +28,7 @@ include 'header.php';
                             $sql1 = 'SELECT * FROM menu ORDER BY menu_name';
                             $res1 = mysqli_query($conn, $sql1);
                             while($row1 = mysqli_fetch_array($res1)) {
-                                echo '<option value="'.$row1['menu_id'].'">'.$row1['menu_name'].'</option>';
+                                echo '<option value="'.intval($row1['menu_id']).'">'.h($row1['menu_name']).'</option>';
                             }
                             ?>
                         </select>
@@ -44,7 +46,7 @@ include 'header.php';
                             $sql2 = 'SELECT * FROM menu ORDER BY menu_name';
                             $res2 = mysqli_query($conn, $sql2);
                             while($row2 = mysqli_fetch_array($res2)) {
-                                echo '<option value="'.$row2['menu_id'].'">'.$row2['menu_name'].'</option>';
+                                echo '<option value="'.intval($row2['menu_id']).'">'.h($row2['menu_name']).'</option>';
                             }
                             ?>
                         </select>
@@ -63,10 +65,18 @@ include 'header.php';
 
 <?php
 if(isset($_POST['menu_id']) && !empty($_POST['menu_id']) && isset($_POST['amount']) && $_POST['amount'] > 0) { 
-    $menu_final = implode(',', $_POST['menu_id']);
+    // Validate CSRF token
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+        echo '<div class="alert alert-danger">เกิดข้อผิดพลาดด้านความปลอดภัย กรุณาลองใหม่</div>';
+        exit();
+    }
+    // Sanitize: ensure all menu IDs are integers to prevent SQL Injection
+    $menu_ids1 = array_map('intval', $_POST['menu_id']);
+    $menu_final = implode(',', $menu_ids1);
     $menu_final2 = '';
     if (isset($_POST['menu_id2']) && !empty($_POST['menu_id2'])) {
-        $menu_final2 = implode(',', $_POST['menu_id2']);
+        $menu_ids2 = array_map('intval', $_POST['menu_id2']);
+        $menu_final2 = implode(',', $menu_ids2);
     }
     $total_menu = $menu_final2 ? $menu_final.','.$menu_final2 : $menu_final;
     $total = intval($_POST['amount']);
