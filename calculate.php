@@ -90,6 +90,7 @@ if(isset($_POST['menu_id']) && !empty($_POST['menu_id']) && isset($_POST['amount
                     <button class="btn btn-light btn-sm" onclick="window.open('print2.php?values1=<?= $menu_final ?>&values2=<?= $menu_final2 ?>&total_menu=<?= $total_menu ?>&amount1=<?= $total ?>&amount2=<?= $total2 ?>','_blank')"><i class="fas fa-print me-1"></i> สรุปทั้งหมด</button>
                     <button class="btn btn-info btn-sm" onclick="window.open('print3.php?values1=<?= $menu_final ?>&values2=<?= $menu_final2 ?>&total_menu=<?= $total_menu ?>&amount1=<?= $total ?>&amount2=<?= $total2 ?>','_blank')"><i class="fas fa-leaf me-1"></i> สรุปผัก</button>
                     <button class="btn btn-warning btn-sm" onclick="window.open('print4.php?values1=<?= $menu_final ?>&values2=<?= $menu_final2 ?>&total_menu=<?= $total_menu ?>&amount1=<?= $total ?>&amount2=<?= $total2 ?>','_blank')"><i class="fas fa-drumstick-bite me-1"></i> สรุปเนื้อสัตว์</button>
+                    <button class="btn btn-success btn-sm" onclick="printIngredientSummary()"><i class="fas fa-shopping-cart me-1"></i> ซื้อวัตถุดิบ</button>
                 </div>
             </div>
         </div>
@@ -148,12 +149,6 @@ while ($row5 = mysqli_fetch_array($res5)) {
 ?>
                     </tbody>
                 </table>
-            </div>
-            <!-- Print Summary Button -->
-            <div class="text-center mt-4">
-                <button type="button" class="btn btn-success btn-lg" onclick="printIngredientSummary()">
-                    <i class="fas fa-shopping-cart"></i> พิมพ์รายการวัตถุดิบที่ต้องซื้อ
-                </button>
             </div>
         </div>
     </div>
