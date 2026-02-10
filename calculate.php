@@ -149,6 +149,12 @@ while ($row5 = mysqli_fetch_array($res5)) {
                     </tbody>
                 </table>
             </div>
+            <!-- Print Summary Button -->
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-success btn-lg" onclick="printIngredientSummary()">
+                    <i class="fas fa-shopping-cart"></i> พิมพ์รายการวัตถุดิบที่ต้องซื้อ
+                </button>
+            </div>
         </div>
     </div>
 <?php } ?>

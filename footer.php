@@ -138,4 +138,25 @@ function confirmDelete(url, message) {
   });
   return false;
 }
+
+// Print ingredient summary function
+function printIngredientSummary() {
+  // Get form data from the current page
+  const menuIds = <?= isset($menu_final) ? json_encode($menu_final) : '[]' ?>;
+  const menuIds2 = <?= isset($menu_final2) ? json_encode($menu_final2) : '[]' ?>;
+  const amount1 = <?= isset($total) ? $total : 0 ?>;
+  const amount2 = <?= isset($total2) ? $total2 : 0 ?>;
+  
+  if (menuIds.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรุณาเลือกรายการอาหาร',
+      text: 'ต้องเลือกรายการอาหารห้องธรรมดาอย่างน้อย 1 รายการ'
+    });
+    return;
+  }
+  
+  const url = `print_summary.php?values1=${menuIds}&values2=${menuIds2}&amount1=${amount1}&amount2=${amount2}`;
+  window.open(url, '_blank');
+}
 </script>
