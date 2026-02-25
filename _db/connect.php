@@ -66,4 +66,18 @@ function alertRedirect($message, $url) {
     echo "<script>alert('" . addslashes($message) . "'); window.location.href='" . $url . "';</script>";
     exit();
 }
+
+function verifyCsrfToken($token) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($token) || empty($_SESSION['csrf_token'])) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_BCRYPT, array('cost' => 10));
+}
 ?>
