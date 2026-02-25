@@ -3,6 +3,20 @@ include 'session.php';
 include '_db/connect.php';
 $menu = 'calculate';
 $csrf_token = generateCsrfToken();
+
+// Check if editing existing history
+$edit_mode = false;
+$edit_data = null;
+if (isset($_GET['edit_id'])) {
+    $edit_id = intval($_GET['edit_id']);
+    $stmt = $pdo->prepare("SELECT * FROM calculate_history WHERE history_id = :id");
+    $stmt->execute(['id' => $edit_id]);
+    $edit_data = $stmt->fetch();
+    if ($edit_data) {
+        $edit_mode = true;
+    }
+}
+
 include 'header.php';
 ?>
 
@@ -18,24 +32,45 @@ include 'header.php';
             <h5 class="mb-0"><i class="fas fa-utensils me-2"></i>เลือกรายการอาหารและจำนวนผู้ป่วย</h5>
         </div>
         <div class="card-body">
-            <form action="calculate.php" method="post">
+            <form action="calculate.php" method="post" id="calcForm">
                 <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                <?php if ($edit_mode): ?>
+                <input type="hidden" name="edit_id" value="<?= $edit_data['history_id'] ?>">
+                <?php endif; ?>
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-4">
+                        <label class="form-label fw-bold"><i class="fas fa-calendar-alt me-1 text-info"></i> วันที่ <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control form-control-lg" required name="calc_date" value="<?= $edit_mode ? h($edit_data['calc_date']) : date('Y-m-d') ?>">
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label fw-bold"><i class="fas fa-clock me-1 text-info"></i> มื้ออาหาร <span class="text-danger">*</span></label>
+                        <select name="meal_type" class="form-select form-select-lg" required>
+                            <option value="">-- เลือกมื้อ --</option>
+                            <option value="breakfast" <?= ($edit_mode && $edit_data['meal_type'] == 'breakfast') ? 'selected' : '' ?>>เช้า</option>
+                            <option value="lunch" <?= ($edit_mode && $edit_data['meal_type'] == 'lunch') ? 'selected' : '' ?>>เที่ยง</option>
+                            <option value="dinner" <?= ($edit_mode && $edit_data['meal_type'] == 'dinner') ? 'selected' : '' ?>>เย็น</option>
+                        </select>
+                    </div>
+                </div>
+                <hr>
                 <div class="row g-3 mb-3">
                     <div class="col-lg-9">
                         <label class="form-label fw-bold"><i class="fas fa-bed me-1 text-primary"></i> รายการอาหาร (ห้องธรรมดา) <span class="text-danger">*</span></label>
                         <select name="menu_id[]" multiple class="form-control select2" required>
                             <?php
+                            $edit_normal_ids = $edit_mode ? explode(',', $edit_data['menu_ids_normal']) : [];
                             $sql1 = 'SELECT * FROM menu ORDER BY menu_name';
                             $res1 = mysqli_query($conn, $sql1);
                             while($row1 = mysqli_fetch_array($res1)) {
-                                echo '<option value="'.intval($row1['menu_id']).'">'.h($row1['menu_name']).'</option>';
+                                $sel1 = in_array($row1['menu_id'], $edit_normal_ids) ? 'selected' : '';
+                                echo '<option value="'.intval($row1['menu_id']).'" '.$sel1.'>'.h($row1['menu_name']).'</option>';
                             }
                             ?>
                         </select>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label fw-bold"><i class="fas fa-users me-1 text-primary"></i> จำนวนผู้ป่วย <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control form-control-lg text-center" required name="amount" min="1" placeholder="0">
+                        <input type="number" class="form-control form-control-lg text-center" required name="amount" min="1" placeholder="0" value="<?= $edit_mode ? intval($edit_data['amount_normal']) : '' ?>">
                     </div>
                 </div>
                 <div class="row g-3">
@@ -43,21 +78,26 @@ include 'header.php';
                         <label class="form-label fw-bold"><i class="fas fa-star me-1 text-warning"></i> รายการอาหาร (ห้องพิเศษ)</label>
                         <select name="menu_id2[]" multiple class="form-control select2">
                             <?php
+                            $edit_special_ids = ($edit_mode && !empty($edit_data['menu_ids_special'])) ? explode(',', $edit_data['menu_ids_special']) : [];
                             $sql2 = 'SELECT * FROM menu ORDER BY menu_name';
                             $res2 = mysqli_query($conn, $sql2);
                             while($row2 = mysqli_fetch_array($res2)) {
-                                echo '<option value="'.intval($row2['menu_id']).'">'.h($row2['menu_name']).'</option>';
+                                $sel2 = in_array($row2['menu_id'], $edit_special_ids) ? 'selected' : '';
+                                echo '<option value="'.intval($row2['menu_id']).'" '.$sel2.'>'.h($row2['menu_name']).'</option>';
                             }
                             ?>
                         </select>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label fw-bold"><i class="fas fa-users me-1 text-warning"></i> จำนวนผู้ป่วย</label>
-                        <input type="number" class="form-control form-control-lg text-center" name="amount2" min="0" placeholder="0">
+                        <input type="number" class="form-control form-control-lg text-center" name="amount2" min="0" placeholder="0" value="<?= $edit_mode ? intval($edit_data['amount_special']) : '' ?>">
                     </div>
                 </div>
                 <div class="text-center mt-4">
                     <button type="submit" class="btn btn-primary btn-lg px-5"><i class="fas fa-calculator me-2"></i> คำนวณวัตถุดิบ</button>
+                    <?php if ($edit_mode): ?>
+                    <button type="button" class="btn btn-success btn-lg px-5" onclick="saveHistory()"><i class="fas fa-save me-2"></i> บันทึกประวัติ</button>
+                    <?php endif; ?>
                 </div>
             </form>
         </div>
@@ -81,6 +121,9 @@ if(isset($_POST['menu_id']) && !empty($_POST['menu_id']) && isset($_POST['amount
     $total_menu = $menu_final2 ? $menu_final.','.$menu_final2 : $menu_final;
     $total = intval($_POST['amount']);
     $total2 = isset($_POST['amount2']) ? intval($_POST['amount2']) : 0;
+    $calc_date = $_POST['calc_date'] ?? date('Y-m-d');
+    $meal_type = $_POST['meal_type'] ?? '';
+    $post_edit_id = intval($_POST['edit_id'] ?? 0);
 ?>
     <div class="card mt-4">
         <div class="card-header bg-success text-white">
@@ -91,6 +134,7 @@ if(isset($_POST['menu_id']) && !empty($_POST['menu_id']) && isset($_POST['amount
                     <button class="btn btn-info btn-sm" onclick="window.open('print3.php?values1=<?= $menu_final ?>&values2=<?= $menu_final2 ?>&total_menu=<?= $total_menu ?>&amount1=<?= $total ?>&amount2=<?= $total2 ?>','_blank')"><i class="fas fa-leaf me-1"></i> สรุปผัก</button>
                     <button class="btn btn-warning btn-sm" onclick="window.open('print4.php?values1=<?= $menu_final ?>&values2=<?= $menu_final2 ?>&total_menu=<?= $total_menu ?>&amount1=<?= $total ?>&amount2=<?= $total2 ?>','_blank')"><i class="fas fa-drumstick-bite me-1"></i> สรุปเนื้อสัตว์</button>
                     <button class="btn btn-success btn-sm" onclick="printIngredientSummary()"><i class="fas fa-shopping-cart me-1"></i> ซื้อวัตถุดิบ</button>
+                    <button class="btn btn-dark btn-sm" onclick="saveHistory()"><i class="fas fa-save me-1"></i> บันทึกประวัติ</button>
                 </div>
             </div>
         </div>
@@ -154,6 +198,109 @@ while ($row5 = mysqli_fetch_array($res5)) {
     </div>
 <?php } ?>
 </section>
+
+<?php if(isset($menu_final)): ?>
+<script>
+function saveHistory() {
+    var calcDate = '<?= h($calc_date) ?>';
+    var mealType = '<?= h($meal_type) ?>';
+    var menuIdsNormal = '<?= $menu_final ?>';
+    var menuIdsSpecial = '<?= $menu_final2 ?>';
+    var amountNormal = <?= $total ?>;
+    var amountSpecial = <?= $total2 ?>;
+    var editId = <?= $post_edit_id ?>;
+    var csrfToken = '<?= $csrf_token ?>';
+
+    if (!calcDate || !mealType) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'ข้อมูลไม่ครบ',
+            text: 'กรุณาเลือกวันที่และมื้ออาหารก่อนบันทึก'
+        });
+        return;
+    }
+
+    var mealLabels = {breakfast: 'เช้า', lunch: 'เที่ยง', dinner: 'เย็น'};
+    var confirmText = editId > 0 
+        ? 'บันทึกการแก้ไข วันที่ ' + calcDate + ' มื้อ' + mealLabels[mealType] + '?'
+        : 'บันทึกข้อมูล วันที่ ' + calcDate + ' มื้อ' + mealLabels[mealType] + '?';
+
+    Swal.fire({
+        title: 'ยืนยันการบันทึก',
+        text: confirmText,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            $.post('crud/history_save.php', {
+                csrf_token: csrfToken,
+                calc_date: calcDate,
+                meal_type: mealType,
+                menu_ids_normal: menuIdsNormal,
+                menu_ids_special: menuIdsSpecial,
+                amount_normal: amountNormal,
+                amount_special: amountSpecial,
+                edit_id: editId
+            }, function(response) {
+                if (response.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกสำเร็จ',
+                        text: response.message,
+                        showCancelButton: true,
+                        confirmButtonText: 'ดูประวัติ',
+                        cancelButtonText: 'อยู่หน้านี้'
+                    }).then(function(r) {
+                        if (r.isConfirmed) window.location.href = 'history.php';
+                    });
+                } else if (response.status === 'duplicate') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'มีข้อมูลซ้ำแล้ว',
+                        text: response.message,
+                        showCancelButton: true,
+                        confirmButtonColor: '#ffc107',
+                        confirmButtonText: 'บันทึกทับ',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then(function(r) {
+                        if (r.isConfirmed) {
+                            $.post('crud/history_save.php', {
+                                csrf_token: csrfToken,
+                                calc_date: calcDate,
+                                meal_type: mealType,
+                                menu_ids_normal: menuIdsNormal,
+                                menu_ids_special: menuIdsSpecial,
+                                amount_normal: amountNormal,
+                                amount_special: amountSpecial,
+                                edit_id: response.existing_id,
+                                force_update: 1
+                            }, function(resp2) {
+                                if (resp2.status === 'success') {
+                                    Swal.fire({icon:'success', title:'บันทึกทับสำเร็จ', text: resp2.message}).then(function() {
+                                        window.location.href = 'history.php';
+                                    });
+                                } else {
+                                    Swal.fire({icon:'error', title:'เกิดข้อผิดพลาด', text: resp2.message});
+                                }
+                            }, 'json');
+                        }
+                    });
+                } else {
+                    Swal.fire({icon: 'error', title: 'เกิดข้อผิดพลาด', text: response.message});
+                }
+            }, 'json').fail(function() {
+                Swal.fire({icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'});
+            });
+        }
+    });
+}
+</script>
+<?php endif; ?>
+
 <?php include 'footer.php'; ?>
 </body>
 </html>

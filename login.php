@@ -308,10 +308,12 @@ if (empty($_SESSION['csrf_token'])) {
       if (!u || !p) {
         e.preventDefault();
         Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูล', text: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', confirmButtonColor: '#1e3a5f' });
-        return;
+        return false;
       }
+      // Allow form to submit normally
       btn.classList.add('loading');
       btn.disabled = true;
+      return true;
     });
     
     const urlParams = new URLSearchParams(window.location.search);

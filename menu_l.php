@@ -13,6 +13,18 @@
           <p>คำนวณวัตถุดิบอาหาร</p>
         </a>
       </li>
+      <li class="nav-item">
+        <a href="history.php" class="nav-link <?= ($menu ?? '') == 'history' ? 'active' : '' ?>">
+          <i class="fas fa-history"></i>
+          <p>ประวัติการคำนวณ</p>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="report.php" class="nav-link <?= ($menu ?? '') == 'report' ? 'active' : '' ?>">
+          <i class="fas fa-file-alt"></i>
+          <p>พิมพ์สรุปรายการ</p>
+        </a>
+      </li>
 
       <li class="nav-header">จัดการข้อมูล</li>
       <li class="nav-item">

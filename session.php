@@ -8,8 +8,8 @@
 if (session_status() === PHP_SESSION_NONE) {
     // Session cookie settings
     ini_set('session.cookie_httponly', 1);
-    ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? 1 : 0);
-    ini_set('session.cookie_samesite', 'Strict');
+    ini_set('session.cookie_secure', 0);
+    ini_set('session.cookie_samesite', 'Lax');
     ini_set('session.use_strict_mode', 1);
     ini_set('session.use_only_cookies', 1);
     
@@ -90,9 +90,5 @@ if (!validateSession()) {
     exit();
 }
 
-// Regenerate session ID periodically (every 5 minutes)
-if (!isset($_SESSION['session_regenerated']) || time() - $_SESSION['session_regenerated'] > 300) {
-    session_regenerate_id(true);
-    $_SESSION['session_regenerated'] = time();
-}
+// Note: session_regenerate_id removed to prevent session loss after login redirect
 ?>

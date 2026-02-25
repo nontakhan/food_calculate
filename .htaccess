@@ -1,28 +1,24 @@
-# Security Headers
+# COMPLETELY DISABLE ALL REWRITE RULES
+<IfModule mod_rewrite.c>
+    RewriteEngine Off
+</IfModule>
+
+# Disable MultiViews which can cause .php extension issues
+Options -MultiViews -Indexes
+
+# Force PHP files to be served as-is, no rewriting
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Basic security headers only
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options nosniff
     Header always set X-Frame-Options SAMEORIGIN
     Header always set X-XSS-Protection "1; mode=block"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://fonts.gstatic.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self';"
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
 </IfModule>
 
-# Hide PHP Version
-<IfModule mod_headers.c>
-    Header unset X-Powered-By
-    ServerTokens Prod
-</IfModule>
-
-# Disable Directory Browsing
-Options -Indexes
-
-# Prevent Access to Sensitive Files
-<FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
+# Protect sensitive files
 <FilesMatch "\.(log|sql|bak|backup|old|tmp|cache)$">
     Order allow,deny
     Deny from all
@@ -33,102 +29,6 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
-# Protect Configuration Files
 <Files "_db/connect.php">
     Require all denied
 </Files>
-
-# File Upload Security
-<IfModule mod_php.c>
-    php_flag file_uploads On
-    php_value upload_max_filesize 2M
-    php_value post_max_size 8M
-    php_value max_execution_time 30
-    php_value memory_limit 128M
-</IfModule>
-
-# URL Rewriting
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    
-    # Redirect HTTP to HTTPS
-    RewriteCond %{HTTPS} off
-    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-    
-    # Remove .php extension
-    RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
-    RewriteRule ^ /%1 [R=301,L,NE]
-    
-    # Add .php extension internally
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME}.php -f
-    RewriteRule ^([^/]+)$ $1.php [L]
-    
-    # Custom 404
-    ErrorDocument 404 /404.php
-</IfModule>
-
-# Gzip Compression
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/plain
-    AddOutputFilterByType DEFLATE text/html
-    AddOutputFilterByType DEFLATE text/xml
-    AddOutputFilterByType DEFLATE text/css
-    AddOutputFilterByType DEFLATE application/xml
-    AddOutputFilterByType DEFLATE application/xhtml+xml
-    AddOutputFilterByType DEFLATE application/rss+xml
-    AddOutputFilterByType DEFLATE application/javascript
-    AddOutputFilterByType DEFLATE application/x-javascript
-</IfModule>
-
-# Cache Control
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType image/png "access plus 1 month"
-    ExpiresByType image/jpg "access plus 1 month"
-    ExpiresByType image/jpeg "access plus 1 month"
-    ExpiresByType image/gif "access plus 1 month"
-    ExpiresByType image/ico "access plus 1 month"
-    ExpiresByType image/svg+xml "access plus 1 month"
-    ExpiresByType font/woff "access plus 1 month"
-    ExpiresByType font/woff2 "access plus 1 month"
-    ExpiresByType application/font-woff "access plus 1 month"
-</IfModule>
-
-# PHP Settings
-<IfModule mod_php.c>
-    # Hide PHP errors in production
-    php_flag display_errors Off
-    php_flag log_errors On
-    php_value error_log /var/log/php_errors.log
-    
-    # Increase security
-    php_flag allow_url_fopen Off
-    php_flag allow_url_include Off
-    php_flag expose_php Off
-    php_value max_execution_time 30
-    php_value memory_limit 128M
-</IfModule>
-
-# Block Suspicious User Agents
-<IfModule mod_setenvif.c>
-    SetEnvIfNoCase User-Agent "^$" bad_bot
-    SetEnvIfNoCase User-Agent "^bot" bad_bot
-    SetEnvIfNoCase User-Agent "^crawler" bad_bot
-    SetEnvIfNoCase User-Agent "^spider" bad_bot
-    
-    <RequireAll>
-        Require not env bad_bot
-        Require all granted
-    </RequireAll>
-</IfModule>
-
-# Rate Limiting
-<IfModule mod_ratelimit.c>
-    # Limit requests to 100 per minute
-    RateLimitInterval 60
-    RateLimitBurst 100
-</IfModule>
