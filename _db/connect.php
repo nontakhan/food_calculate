@@ -1,9 +1,4 @@
 <?php
-/**
- * Database Connection - Secure Configuration
- * PHP 8.x Compatible with PDO and MySQLi
- */
-
 // Load environment variables from .env file
 $envFile = dirname(__DIR__) . '/.env';
 if (file_exists($envFile)) {
@@ -16,95 +11,58 @@ if (file_exists($envFile)) {
     }
 }
 
-// Database Configuration (loaded from .env)
-define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
-define('DB_USER', $_ENV['DB_USER'] ?? 'root');
-define('DB_PASS', $_ENV['DB_PASS'] ?? '');
-define('DB_NAME', $_ENV['DB_NAME'] ?? 'food_cal');
-define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
+// Database Configuration
+$db_host = isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'localhost';
+$db_user = isset($_ENV['DB_USER']) ? $_ENV['DB_USER'] : 'root';
+$db_pass = isset($_ENV['DB_PASS']) ? $_ENV['DB_PASS'] : '';
+$db_name = isset($_ENV['DB_NAME']) ? $_ENV['DB_NAME'] : 'food_cal';
+$db_charset = isset($_ENV['DB_CHARSET']) ? $_ENV['DB_CHARSET'] : 'utf8mb4';
 
-// Error reporting (disable in production)
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
-
-// MySQLi Connection (for backward compatibility)
-$conn = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-
+// MySQLi Connection
+$conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
 if (!$conn) {
-    error_log("Database connection failed: " . mysqli_connect_error());
-    die("<div class='alert alert-danger text-center'>ขณะนี้ระบบไม่สามารถเชื่อมต่อกับฐานข้อมูลได้</div>");
+    die("Database connection failed");
 }
+mysqli_set_charset($conn, $db_charset);
 
-// Set charset
-mysqli_set_charset($conn, DB_CHARSET);
-
-// PDO Connection (recommended for prepared statements)
+// PDO Connection
 try {
     $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET,
-        DB_USER,
-        DB_PASS,
-        [
+        "mysql:host=" . $db_host . ";dbname=" . $db_name . ";charset=" . $db_charset,
+        $db_user,
+        $db_pass,
+        array(
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
+            PDO::ATTR_EMULATE_PREPARES => false
+        )
     );
 } catch (PDOException $e) {
-    error_log("PDO Connection failed: " . $e->getMessage());
-    die("<div class='alert alert-danger text-center'>ขณะนี้ระบบไม่สามารถเชื่อมต่อกับฐานข้อมูลได้</div>");
+    die("Database connection failed");
 }
 
-/**
- * Security Helper Functions
- */
-
-// Generate CSRF Token
-function generateCsrfToken(): string {
+// Helper Functions (no type declarations for PHP compatibility)
+function generateCsrfToken() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        $_SESSION['csrf_token'] = md5(uniqid(mt_rand(), true));
     }
     return $_SESSION['csrf_token'];
 }
 
-// Verify CSRF Token
-function verifyCsrfToken(?string $token): bool {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    if (empty($token) || empty($_SESSION['csrf_token'])) {
-        return false;
-    }
-    return hash_equals($_SESSION['csrf_token'], $token);
+function h($string) {
+    if ($string === null) $string = '';
+    return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
 }
 
-// Sanitize output for XSS protection
-function h(?string $string): string {
-    return htmlspecialchars($string ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-// Secure password hashing
-function hashPassword(string $password): string {
-    return password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-}
-
-// Verify password
-function verifyPassword(string $password, string $hash): bool {
-    return password_verify($password, $hash);
-}
-
-// Secure redirect
-function redirect(string $url): void {
+function redirect($url) {
     header("Location: " . $url);
     exit();
 }
 
-// Show alert and redirect
-function alertRedirect(string $message, string $url): void {
+function alertRedirect($message, $url) {
     echo "<script>alert('" . addslashes($message) . "'); window.location.href='" . $url . "';</script>";
     exit();
 }

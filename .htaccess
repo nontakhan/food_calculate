@@ -1,34 +1,4 @@
-# COMPLETELY DISABLE ALL REWRITE RULES
-<IfModule mod_rewrite.c>
-    RewriteEngine Off
-</IfModule>
-
-# Disable MultiViews which can cause .php extension issues
-Options -MultiViews -Indexes
-
-# Force PHP files to be served as-is, no rewriting
-<FilesMatch "\.php$">
-    SetHandler application/x-httpd-php
-</FilesMatch>
-
-# Basic security headers only
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options SAMEORIGIN
-    Header always set X-XSS-Protection "1; mode=block"
-</IfModule>
-
 # Protect sensitive files
-<FilesMatch "\.(log|sql|bak|backup|old|tmp|cache)$">
-    Order allow,deny
+<FilesMatch "\.(log|sql|bak|backup|old|tmp|cache|env)$">
     Deny from all
 </FilesMatch>
-
-<FilesMatch "(config|connect|database|db)\.php$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
-<Files "_db/connect.php">
-    Require all denied
-</Files>
